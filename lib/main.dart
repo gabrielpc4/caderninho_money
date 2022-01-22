@@ -109,22 +109,22 @@ String formatDate2(DateTime date) {
 
 class _MyHomePageState extends State<MyHomePage> {
   int daysInMonth = 30;
-  Comprinha novaComprinha = Comprinha("", "", 0);
   List<Comprinha> comprinhas = [];
   final double defaultBudget = 300;
   double _budget = 300;
   double moneyLeft = 300;
   double available = 0;
-  var controller = MoneyMaskedTextController(leftSymbol: 'R\$ ');
-  var novaComprinhaController = MoneyMaskedTextController(leftSymbol: 'R\$ ');
+  double spendPerDay = 0;
   bool _checkConfiguration() => true;
-  num daysLeft = 31;
   int currentDay = 1;
   SharedPreferences? prefs;
   String lastUpdated = "";
   DateTime fakeDate = DateTime.now();
   var nomeComprinhaTextEditingController = TextEditingController();
+  var valorComprinhaTextEditingController = TextEditingController();
+  var moneyLeftTextEditingController = TextEditingController();
   int fakeDateOffset = 0;
+  bool isEditingMoneyLeft = false;
 
   @override
   void initState() {
@@ -145,14 +145,14 @@ class _MyHomePageState extends State<MyHomePage> {
           if (musicsString.isNotEmpty) {
             comprinhas = Comprinha.decode(musicsString);
           }
-          controller.text = _budget.toStringAsFixed(2);
-          if (av == null) {
+          if (av == null || lastUpdated.isEmpty) {
             calculateAvailableMoneyFromZero();
             lastUpdated =
                 DateTime.now().toString().substring(0, "2022-00-00".length);
           } else {
             available = av;
             var today = DateTime.now();
+            print('lastUpdated: ' '${lastUpdated}');
             DateTime dateLastUpdated = DateTime.parse(lastUpdated);
             var monthsPassed = today.month - dateLastUpdated.month;
             if (monthsPassed < 0) {
@@ -176,6 +176,8 @@ class _MyHomePageState extends State<MyHomePage> {
               pref.setString('lastUpdated', lastUpdated);
             }
           }
+
+          calculateSpendPerDayMoney();
         });
       }();
     }
@@ -186,6 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
       fakeDate = fakeDate.add(const Duration(days: 1));
       available += _budget / daysInMonth;
       fakeDateOffset++;
+      calculateSpendPerDayMoney();
     });
   }
 
@@ -194,24 +197,25 @@ class _MyHomePageState extends State<MyHomePage> {
       fakeDate = fakeDate.subtract(const Duration(days: 1));
       available -= _budget / daysInMonth;
       fakeDateOffset--;
+      calculateSpendPerDayMoney();
     });
   }
 
-  void calculateAvailableMoney() {
-    setState(() {
-      daysLeft = 30 - currentDay + 1;
-      //var amountToAddToday = ((_budget - available) / daysLeft);
-      var amountToAddToday = _budget / daysInMonth;
-
-      available += amountToAddToday;
-    });
+  void calculateSpendPerDayMoney() {
+    int daysLeft = daysInMonth - fakeDate.day + 1;
+    spendPerDay = (moneyLeft / daysLeft);
   }
 
   void calculateAvailableMoneyFromZero() {
-    setState(() {
-      available = (_budget / daysInMonth) * currentDay;
-      prefs?.setDouble('available', available);
-    });
+    available = (_budget / daysInMonth) * currentDay;
+    prefs?.setDouble('available', available);
+  }
+
+  bool isNumeric(String s) {
+    if (s.isEmpty) {
+      return false;
+    }
+    return double.tryParse(s) != null;
   }
 
   @override
@@ -239,62 +243,105 @@ class _MyHomePageState extends State<MyHomePage> {
                           'Budget restante:',
                         ),
                       ),
-                      Text(
-                        'R\$ ' '${moneyLeft.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
-                      ),
-                      /*SizedBox(
-                      width: 100.0,
-                      child: 
-                      TextField(
-                        controller: controller,
-                        onChanged: (text) {
+                      if (!isEditingMoneyLeft)
+                        Text(
+                          'R\$ ' '${moneyLeft.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 30, fontWeight: FontWeight.bold),
+                        ),
+                      if (isEditingMoneyLeft)
+                        SizedBox(
+                          width: 100,
+                          child: Flexible(
+                            child: TextField(
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              controller: moneyLeftTextEditingController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 2.0),
+                                  borderRadius: BorderRadius.circular(25.0),
+                                ),
+                              ),
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
+                          ),
+                        ),
+                      ElevatedButton(
+                        child: Text(isEditingMoneyLeft ? "Salvar" : "Editar"),
+                        onPressed: () {
+                          if (isEditingMoneyLeft) {
+                            setState(() {
+                              if (isNumeric(
+                                  moneyLeftTextEditingController.text)) {
+                                moneyLeft = double.parse(
+                                    moneyLeftTextEditingController.text);
+                              }
+                            });
+                          } else {
+                            moneyLeftTextEditingController.clear();
+                          }
                           setState(() {
-                            _budget = controller.numberValue;
-                            prefs?.setDouble('budget', _budget);
+                            isEditingMoneyLeft = !isEditingMoneyLeft;
                           });
                         },
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
                       ),
-                    ),*/
-                      // ElevatedButton(
-                      //   onPressed: () => calculateAvailableMoneyFromZero(),
-                      //   child: const Text(
-                      //     "Resetar",
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
                 const Divider(),
                 Container(
                   margin: const EdgeInsets.all(15),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text(
-                        fakeDateOffset != 0
-                            ? 'Você poderá gastar:'
-                            : 'Você pode gastar:',
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      // Column(
+                      //   mainAxisAlignment: MainAxisAlignment.start,
+                      //   children: <Widget>[
+                      //     Text(
+                      //       fakeDateOffset != 0
+                      //           ? 'Você terá direito à:'
+                      //           : 'Você tem direito à:',
+                      //     ),
+                      //     Text(
+                      //       'R\$ ' '${spendPerDay.toStringAsFixed(2)}',
+                      //       style: TextStyle(
+                      //           color: available >= 0
+                      //               ? (fakeDateOffset != 0
+                      //                   ? Colors.grey
+                      //                   : Colors.green)
+                      //               : Colors.red,
+                      //           fontSize: 30),
+                      //     ),
+                      //   ],
+                      // ),
+                      // const SizedBox(width: 20),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'R\$ ' '${available.toStringAsFixed(2)}',
-                            style: TextStyle(
-                                color: available >= 0
-                                    ? (fakeDateOffset != 0
-                                        ? Colors.grey
-                                        : Colors.green)
-                                    : Colors.red,
-                                fontSize: 30),
+                            fakeDateOffset != 0
+                                ? 'Você poderá gastar:'
+                                : 'Você pode gastar:',
                           ),
-                          const SizedBox(width: 3),
-                          const Text("/dia"),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Text(
+                                'R\$ ' '${spendPerDay.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                    color: spendPerDay >= 0
+                                        ? (fakeDateOffset != 0
+                                            ? Colors.grey
+                                            : Colors.green)
+                                        : Colors.red,
+                                    fontSize: 30),
+                              ),
+                              const SizedBox(width: 3),
+                              const Text("/dia"),
+                            ],
+                          ),
                         ],
                       ),
                     ],
@@ -325,9 +372,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     Flexible(
                       child: TextField(
                         controller: nomeComprinhaTextEditingController,
-                        onChanged: (text) {
-                          novaComprinha.nome = text;
-                        },
                         decoration: const InputDecoration(
                           helperText: "Minha comprinha",
                         ),
@@ -339,11 +383,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: SizedBox(
                         width: 80,
                         child: TextField(
-                          controller: novaComprinhaController,
-                          onChanged: (value) {
-                            novaComprinha.valor =
-                                novaComprinhaController.numberValue;
-                          },
+                          controller: valorComprinhaTextEditingController,
+                          keyboardType: TextInputType.number,
                           decoration:
                               const InputDecoration(helperText: "Valor"),
                           style: Theme.of(context).textTheme.bodyText1,
@@ -352,25 +393,30 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        setState(() {
-                          available =
-                              prefs?.getDouble('available') ?? available;
-                          fakeDate = DateTime.now();
-                          fakeDateOffset = 0;
-                          comprinhas.add(Comprinha(formatDate(DateTime.now()),
-                              novaComprinha.nome, novaComprinha.valor));
-                          available -= novaComprinha.valor;
-                          moneyLeft -= novaComprinha.valor;
-                          prefs?.setDouble('available', available);
-                          prefs?.setDouble('moneyLeft', moneyLeft);
-                          final String encodedData =
-                              Comprinha.encode(comprinhas);
-                          prefs?.setString('comprinhas', encodedData);
-                          novaComprinhaController =
-                              MoneyMaskedTextController(leftSymbol: 'R\$ ');
-                          nomeComprinhaTextEditingController.clear();
-                          novaComprinha = Comprinha("", "", 0.0);
-                        });
+                        if (isNumeric(
+                            valorComprinhaTextEditingController.text)) {
+                          double valor = double.parse(
+                              valorComprinhaTextEditingController.text);
+                          String nome = nomeComprinhaTextEditingController.text;
+                          setState(() {
+                            // available =
+                            //     prefs?.getDouble('available') ?? available;
+                            // fakeDate = DateTime.now();
+                            // fakeDateOffset = 0;
+                            comprinhas.add(Comprinha(
+                                formatDate(DateTime.now()), nome, valor));
+                            available -= valor;
+                            moneyLeft -= valor;
+                            prefs?.setDouble('available', available);
+                            prefs?.setDouble('moneyLeft', moneyLeft);
+                            final String encodedData =
+                                Comprinha.encode(comprinhas);
+                            prefs?.setString('comprinhas', encodedData);
+                            valorComprinhaTextEditingController.clear();
+                            nomeComprinhaTextEditingController.clear();
+                            calculateSpendPerDayMoney();
+                          });
+                        }
                       },
                       child: const Text('+'),
                       style: ElevatedButton.styleFrom(
@@ -405,9 +451,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         ElevatedButton(
                           onPressed: () {
                             setState(() {
-                              available =
-                                  prefs?.getDouble('available') ?? available;
-                              fakeDate = DateTime.now();
+                              // available =
+                              //     prefs?.getDouble('available') ?? available;
+                              // fakeDate = DateTime.now();
+                              //fakeDateOffset = 0;
                               available += comprinhas[index].valor;
                               moneyLeft += comprinhas[index].valor;
                               comprinhas.removeAt(index);
@@ -416,7 +463,8 @@ class _MyHomePageState extends State<MyHomePage> {
                               prefs?.setDouble('available', available);
                               prefs?.setDouble('moneyLeft', moneyLeft);
                               prefs?.setString('comprinhas', encodedData);
-                              fakeDateOffset = 0;
+
+                              calculateSpendPerDayMoney();
                             });
                           },
                           child: const Text('-'),

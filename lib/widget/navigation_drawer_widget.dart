@@ -36,32 +36,32 @@ class _NavigationDrawerWidgetState extends State<NavigationDrawerWidget> {
               title: Text("Olá Marcela",
                   style: TextStyle(fontSize: 20, color: Colors.white)),
             ),
-            buildMenuItem(
-              text: "Budget mensal",
-              icon: Icons.attach_money,
-              trailing: Flexible(
-                child: SizedBox(
-                  width: 100,
-                  child: TextField(
-                    controller: budgetTextEditingController,
-                    decoration: InputDecoration(
-                      fillColor: Colors.white,
-                      filled: true,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.white, width: 2.0),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      border: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.white, width: 2.0),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // buildMenuItem(
+            //   text: "Budget mensal",
+            //   icon: Icons.attach_money,
+            //   trailing: Flexible(
+            //     child: SizedBox(
+            //       width: 100,
+            //       child: TextField(
+            //         controller: budgetTextEditingController,
+            //         decoration: InputDecoration(
+            //           fillColor: Colors.white,
+            //           filled: true,
+            //           enabledBorder: OutlineInputBorder(
+            //             borderSide:
+            //                 const BorderSide(color: Colors.white, width: 2.0),
+            //             borderRadius: BorderRadius.circular(25.0),
+            //           ),
+            //           border: OutlineInputBorder(
+            //             borderSide:
+            //                 const BorderSide(color: Colors.white, width: 2.0),
+            //             borderRadius: BorderRadius.circular(25.0),
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
             buildMenuItem(
               text: "Cor do App",
               icon: Icons.format_paint,
