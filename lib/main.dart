@@ -278,17 +278,24 @@ class _MyHomePageState extends State<MyHomePage> {
                       Text(
                         fakeDateOffset != 0
                             ? 'Você poderá gastar:'
-                            : 'Você pode gastar hoje:',
+                            : 'Você pode gastar:',
                       ),
-                      Text(
-                        'R\$ ' '${available.toStringAsFixed(2)}',
-                        style: TextStyle(
-                            color: available >= 0
-                                ? (fakeDateOffset != 0
-                                    ? Colors.grey
-                                    : Colors.green)
-                                : Colors.red,
-                            fontSize: 30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            'R\$ ' '${available.toStringAsFixed(2)}',
+                            style: TextStyle(
+                                color: available >= 0
+                                    ? (fakeDateOffset != 0
+                                        ? Colors.grey
+                                        : Colors.green)
+                                    : Colors.red,
+                                fontSize: 30),
+                          ),
+                          const SizedBox(width: 3),
+                          const Text("/dia"),
+                        ],
                       ),
                     ],
                   ),
@@ -349,6 +356,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           available =
                               prefs?.getDouble('available') ?? available;
                           fakeDate = DateTime.now();
+                          fakeDateOffset = 0;
                           comprinhas.add(Comprinha(formatDate(DateTime.now()),
                               novaComprinha.nome, novaComprinha.valor));
                           available -= novaComprinha.valor;
@@ -362,7 +370,6 @@ class _MyHomePageState extends State<MyHomePage> {
                               MoneyMaskedTextController(leftSymbol: 'R\$ ');
                           nomeComprinhaTextEditingController.clear();
                           novaComprinha = Comprinha("", "", 0.0);
-                          fakeDateOffset = 0;
                         });
                       },
                       child: const Text('+'),
