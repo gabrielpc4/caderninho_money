@@ -33,7 +33,7 @@ class _NavigationDrawerWidgetState extends State<NavigationDrawerWidget> {
         child: ListView(
           children: <Widget>[
             const ListTile(
-              title: Text("Olá Marcela",
+              title: Text("Olá, Marcela",
                   style: TextStyle(fontSize: 20, color: Colors.white)),
             ),
             // buildMenuItem(

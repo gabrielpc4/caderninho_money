@@ -252,19 +252,16 @@ class _MyHomePageState extends State<MyHomePage> {
                       if (isEditingMoneyLeft)
                         SizedBox(
                           width: 100,
-                          child: Flexible(
-                            child: TextField(
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              controller: moneyLeftTextEditingController,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: Colors.white, width: 2.0),
-                                  borderRadius: BorderRadius.circular(25.0),
-                                ),
+                          child: TextField(
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            controller: moneyLeftTextEditingController,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderSide: const BorderSide(
+                                    color: Colors.white, width: 2.0),
+                                borderRadius: BorderRadius.circular(25.0),
                               ),
-                              style: Theme.of(context).textTheme.bodyText1,
                             ),
                           ),
                         ),
@@ -277,6 +274,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   moneyLeftTextEditingController.text)) {
                                 moneyLeft = double.parse(
                                     moneyLeftTextEditingController.text);
+                                calculateSpendPerDayMoney();
                               }
                             });
                           } else {
