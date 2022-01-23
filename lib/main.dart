@@ -90,7 +90,7 @@ String formatDate(DateTime date) {
 }
 
 DateTime toBRHours(DateTime date) {
-  return date.subtract(const Duration(hours: 3));
+  return date.toLocal();
 }
 
 String formatDate2(DateTime date) {
@@ -150,11 +150,12 @@ class _MyHomePageState extends State<MyHomePage> {
           if (musicsString.isNotEmpty) {
             comprinhas = Comprinha.decode(musicsString);
           }
-          if (av == null || lastUpdated.isEmpty) {
+          if (av == null) {
             calculateAvailableMoneyFromZero();
             lastUpdated = toBRHours(DateTime.now())
                 .toString()
                 .substring(0, "2022-00-00".length);
+            pref.setString('lastUpdated', lastUpdated);
           } else {
             available = av;
             var today = toBRHours(DateTime.now());
@@ -172,10 +173,15 @@ class _MyHomePageState extends State<MyHomePage> {
             var daysPassedSinceLastUpdate = daysBetween(dateLastUpdated, now);
 
             if (daysPassedSinceLastUpdate > 0) {
-              var amountToAdd =
-                  (_budget / daysInMonth) * daysPassedSinceLastUpdate;
-              available += amountToAdd;
+              var daysLeft = daysInMonth - currentDay + 1;
 
+              var daysLeftPrev = daysInMonth - dateLastUpdated.day;
+              print(
+                  '${daysPassedSinceLastUpdate} days passed, adding ${((moneyLeft - available) / daysLeftPrev) * daysPassedSinceLastUpdate}');
+              print(
+                  '${moneyLeft} - ${available} / ${daysLeftPrev} * ${daysPassedSinceLastUpdate} = ${((moneyLeft - available) / daysLeftPrev) * daysPassedSinceLastUpdate}');
+              available += ((moneyLeft - available) / daysLeftPrev) *
+                  daysPassedSinceLastUpdate;
               pref.setDouble('available', available);
               lastUpdated = toBRHours(DateTime.now())
                   .toString()
@@ -193,19 +199,38 @@ class _MyHomePageState extends State<MyHomePage> {
   void advanceDay() {
     setState(() {
       fakeDate = fakeDate.add(const Duration(days: 1));
-      available += _budget / daysInMonth;
       fakeDateOffset++;
+      if (available < moneyLeft) {
+        var daysLeft = daysInMonth - fakeDate.day + 1;
+        available += (moneyLeft - available) / daysLeft;
+        print(
+            '${moneyLeft} - ${available} / ${daysLeft} = ${(moneyLeft - available) / (daysLeft)}');
+
+        calculateSpendPerDayMoney();
+      }
+    });
+  }
+
+  void recalculate() {
+    setState(() {
+      fakeDate = toBRHours(DateTime.now());
+      fakeDateOffset = 0;
+      calculateAvailableMoneyFromZero();
       calculateSpendPerDayMoney();
+      prefs?.setDouble('available', available);
+      prefs?.setDouble('moneyLeft', moneyLeft);
     });
   }
 
   void goBackOneDay() {
-    setState(() {
-      fakeDate = fakeDate.subtract(const Duration(days: 1));
-      available -= _budget / daysInMonth;
-      fakeDateOffset--;
-      calculateSpendPerDayMoney();
-    });
+    recalculate();
+    // fakeDate = fakeDate.subtract(const Duration(days: 1));
+    // var daysLeft = daysInMonth - fakeDate.day + 1;
+    // available -= (moneyLeft - available) / (daysLeft + 1);
+    // print(
+    //     '${moneyLeft} - ${available} / ${(daysLeft + 1)} = ${(moneyLeft - available) / ((daysLeft + 1))}');
+    // fakeDateOffset--;
+    // calculateSpendPerDayMoney();
   }
 
   void calculateSpendPerDayMoney() {
@@ -214,8 +239,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void calculateAvailableMoneyFromZero() {
-    available = (_budget / daysInMonth) * currentDay;
-    prefs?.setDouble('available', available);
+    setState(() {
+      available = (moneyLeft / daysInMonth) * currentDay;
+      prefs?.setDouble('available', available);
+    });
   }
 
   bool isNumeric(String s) {
@@ -279,10 +306,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             setState(() {
                               if (isNumeric(
                                   moneyLeftTextEditingController.text)) {
+                                double moneyLeftPrev = moneyLeft;
                                 moneyLeft = double.parse(
                                     moneyLeftTextEditingController.text);
-                                prefs?.setDouble('moneyLeft', moneyLeft);
-                                calculateSpendPerDayMoney();
+                                recalculate();
                               }
                             });
                           } else {
@@ -429,8 +456,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 valor));
                             available -= valor;
                             moneyLeft -= valor;
-                            prefs?.setDouble('available', available);
-                            prefs?.setDouble('moneyLeft', moneyLeft);
+                            recalculate();
                             final String encodedData =
                                 Comprinha.encode(comprinhas);
                             prefs?.setString('comprinhas', encodedData);
@@ -479,11 +505,10 @@ class _MyHomePageState extends State<MyHomePage> {
                               //fakeDateOffset = 0;
                               available += comprinhas[index].valor;
                               moneyLeft += comprinhas[index].valor;
+                              recalculate();
                               comprinhas.removeAt(index);
                               final String encodedData =
                                   Comprinha.encode(comprinhas);
-                              prefs?.setDouble('available', available);
-                              prefs?.setDouble('moneyLeft', moneyLeft);
                               prefs?.setString('comprinhas', encodedData);
 
                               calculateSpendPerDayMoney();
@@ -498,10 +523,18 @@ class _MyHomePageState extends State<MyHomePage> {
                     );
                   },
                 ),
-                const Text(
-                  "Desenvolvido por Gabriel S.A.",
-                  textAlign: TextAlign.right,
-                  style: TextStyle(color: Colors.grey, fontSize: 10),
+                GestureDetector(
+                  onTap: () {
+                    // fakeDate = toBRHours(DateTime.now());
+                    // fakeDateOffset = 0;
+                    // calculateAvailableMoneyFromZero();
+                    // calculateSpendPerDayMoney();
+                  },
+                  child: const Text(
+                    "Desenvolvido por Gabriel S.A.",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                  ),
                 ),
                 const SizedBox(height: 5),
               ],
