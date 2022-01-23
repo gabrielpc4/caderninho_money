@@ -89,6 +89,10 @@ String formatDate(DateTime date) {
   return formatter.format(date);
 }
 
+DateTime toBRHours(DateTime date) {
+  return date.subtract(const Duration(hours: 3));
+}
+
 String formatDate2(DateTime date) {
   List<String> monthName = [
     "Janeiro",
@@ -119,7 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int currentDay = 1;
   SharedPreferences? prefs;
   String lastUpdated = "";
-  DateTime fakeDate = DateTime.now();
+  DateTime fakeDate = toBRHours(DateTime.now());
   var nomeComprinhaTextEditingController = TextEditingController();
   var valorComprinhaTextEditingController = TextEditingController();
   var moneyLeftTextEditingController = TextEditingController();
@@ -131,7 +135,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     if (_checkConfiguration()) {
       () async {
-        DateTime now = DateTime.now();
+        DateTime now = toBRHours(DateTime.now());
         daysInMonth = DateTime(now.year, now.month + 1, 0).day;
         var pref = await SharedPreferences.getInstance();
         prefs = pref;
@@ -140,20 +144,22 @@ class _MyHomePageState extends State<MyHomePage> {
           double? av = pref.getDouble('available');
           moneyLeft = pref.getDouble('moneyLeft') ?? defaultBudget;
           lastUpdated = pref.getString('lastUpdated') ?? "";
-          currentDay = DateTime.now().day;
+          currentDay = toBRHours(DateTime.now()).day;
+
           final String musicsString = pref.getString('comprinhas') ?? "";
           if (musicsString.isNotEmpty) {
             comprinhas = Comprinha.decode(musicsString);
           }
           if (av == null || lastUpdated.isEmpty) {
             calculateAvailableMoneyFromZero();
-            lastUpdated =
-                DateTime.now().toString().substring(0, "2022-00-00".length);
+            lastUpdated = toBRHours(DateTime.now())
+                .toString()
+                .substring(0, "2022-00-00".length);
           } else {
             available = av;
-            var today = DateTime.now();
+            var today = toBRHours(DateTime.now());
             print('lastUpdated: ' '${lastUpdated}');
-            DateTime dateLastUpdated = DateTime.parse(lastUpdated);
+            DateTime dateLastUpdated = toBRHours(DateTime.parse(lastUpdated));
             var monthsPassed = today.month - dateLastUpdated.month;
             if (monthsPassed < 0) {
               monthsPassed = 12 + now.month - dateLastUpdated.month;
@@ -171,8 +177,9 @@ class _MyHomePageState extends State<MyHomePage> {
               available += amountToAdd;
 
               pref.setDouble('available', available);
-              lastUpdated =
-                  DateTime.now().toString().substring(0, "2022-00-00".length);
+              lastUpdated = toBRHours(DateTime.now())
+                  .toString()
+                  .substring(0, "2022-00-00".length);
               pref.setString('lastUpdated', lastUpdated);
             }
           }
@@ -274,6 +281,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   moneyLeftTextEditingController.text)) {
                                 moneyLeft = double.parse(
                                     moneyLeftTextEditingController.text);
+                                prefs?.setDouble('moneyLeft', moneyLeft);
                                 calculateSpendPerDayMoney();
                               }
                             });
@@ -294,27 +302,40 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      // Column(
-                      //   mainAxisAlignment: MainAxisAlignment.start,
-                      //   children: <Widget>[
-                      //     Text(
-                      //       fakeDateOffset != 0
-                      //           ? 'Você terá direito à:'
-                      //           : 'Você tem direito à:',
-                      //     ),
-                      //     Text(
-                      //       'R\$ ' '${spendPerDay.toStringAsFixed(2)}',
-                      //       style: TextStyle(
-                      //           color: available >= 0
-                      //               ? (fakeDateOffset != 0
-                      //                   ? Colors.grey
-                      //                   : Colors.green)
-                      //               : Colors.red,
-                      //           fontSize: 30),
-                      //     ),
-                      //   ],
-                      // ),
-                      // const SizedBox(width: 20),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            fakeDateOffset != 0
+                                ? 'Você terá direito a:'
+                                : 'Você tem direito a:',
+                          ),
+                          if (available > 0)
+                            Text(
+                              'R\$ ' '${available.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                  color: available >= 0
+                                      ? (fakeDateOffset != 0
+                                          ? Colors.grey
+                                          : Colors.black)
+                                      : Colors.red,
+                                  fontSize: 30),
+                            ),
+                          if (available <= 0)
+                            Text(
+                              'R\$ '
+                              '${(spendPerDay < 0.0 ? 0.0 : spendPerDay).toStringAsFixed(2)}',
+                              style: TextStyle(
+                                  color: spendPerDay >= 0
+                                      ? (fakeDateOffset != 0
+                                          ? Colors.grey
+                                          : Colors.black)
+                                      : Colors.red,
+                                  fontSize: 30),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(width: 50),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: <Widget>[
@@ -327,7 +348,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
                               Text(
-                                'R\$ ' '${spendPerDay.toStringAsFixed(2)}',
+                                'R\$ '
+                                '${(spendPerDay < 0.0 ? 0.0 : spendPerDay).toStringAsFixed(2)}',
                                 style: TextStyle(
                                     color: spendPerDay >= 0
                                         ? (fakeDateOffset != 0
@@ -402,7 +424,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             // fakeDate = DateTime.now();
                             // fakeDateOffset = 0;
                             comprinhas.add(Comprinha(
-                                formatDate(DateTime.now()), nome, valor));
+                                formatDate(toBRHours(DateTime.now())),
+                                nome,
+                                valor));
                             available -= valor;
                             moneyLeft -= valor;
                             prefs?.setDouble('available', available);
