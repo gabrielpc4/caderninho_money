@@ -108,7 +108,7 @@ String formatDate2(DateTime date) {
     "Novembro",
     "Dezembro"
   ];
-  return '${date.day} de ${monthName[date.month + 1]} de ${date.year}';
+  return '${date.day} de ${monthName[date.month]} de ${date.year}';
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -189,8 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
               pref.setString('lastUpdated', lastUpdated);
             }
           }
-
-          calculateSpendPerDayMoney();
+          recalculate();
         });
       }();
     }
